@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-backend
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-backend
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JDBC_DRIVER
+          value: "{{ .Values.backend.env.JDBC_DRIVER }}"
+        - name: DATASOURCE_URL
+          value: "{{ .Values.backend.env.DATASOURCE_URL }}"
+        - name: DATASOURCE_USER
+          value: "{{ .Values.backend.env.DATASOURCE_USER }}"
+        - name: DATASOURCE_PASSWORD
+          value: "{{ .Values.backend.env.DATASOURCE_PASSWORD }}"
+#        volumeMounts:
+#        - mountPath: /mnt/efs 
+#          name: efs-volume 
+      imagePullSecrets:
+      - name: {{ .Values.backend.imagePullSecret }}
+#      volumes:
+#      - name: efs-volume
+#        persistentVolumeClaim:
+#          claimName: {{ .Release.Name }}-efs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-backend-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-backend
+spec:
+  selector:
+    app: {{ .Release.Name }}-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: {{ .Values.backend.service.type }}
