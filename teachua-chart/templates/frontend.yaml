@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-frontend
+        image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+        ports:
+        - containerPort: 80
+#        env:
+#        - name: REACT_APP_ROOT_SERVER
+#          value: "{{ .Values.frontend.env.REACT_APP_ROOT_SERVER }}"
+#        volumeMounts:
+#        - mountPath: /mnt/efs  # Директория, куди буде змонтовано EFS
+#          name: efs-volume
+      imagePullSecrets:
+      - name: {{ .Values.frontend.imagePullSecret }}
+#      volumes:
+#      - name: efs-volume
+#        persistentVolumeClaim:
+#          claimName: {{ .Release.Name }}-efs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-frontend-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-frontend
+spec:
+  selector:
+    app: {{ .Release.Name }}-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: {{ .Values.frontend.service.type }}
