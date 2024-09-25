@@ -1,0 +1,86 @@
+#namespace: new-namespace
+
+rds:
+  enabled: true
+  engine: "mariadb"  # або mysql
+  host: "teachua.ctegro5wnfvo.us-east-1.rds.amazonaws.com"
+  port: 3306
+  dbName: "teachua"
+  username: ""
+  password: ""
+  # dbName: {{ .Values.rds.dbName | default (lookup "v1" "Secret" "new-hua" "teachua-db-secret").data.DB_NAME | b64dec | quote }}
+  # username: {{ .Values.rds.username | default (lookup "v1" "Secret" "new-hua" "teachua-db-secret").data.DB_USER | b64dec | quote }}
+  # password: {{ .Values.rds.password | default (lookup "v1" "Secret" "new-hua" "teachua-db-secret").data.DB_PASSWORD | b64dec | quote }}   
+  multiAz: false
+  publiclyAccessible: false
+
+service:
+  type: LoadBalancer
+  port: 80
+
+backend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/natvor/teachua-backend-natvor
+    tag: latest
+  service:
+    type: LoadBalancer
+  env:
+    JDBC_DRIVER: "org.mariadb.jdbc.Driver"
+    DATASOURCE_URL: "jdbc:mariadb://teachua.ctegro5wnfvo.us-east-1.rds.amazonaws.com:3306/teachua?allowPublicKeyRetrieval=true"
+    DATASOURCE_USER: "{{ .Values.rds.username }}"  
+    DATASOURCE_PASSWORD: "{{ .Values.rds.password }}"
+  imagePullSecret: ghcr-secret
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/natvor/teachua-frontend-natvor
+    tag: latest
+  service:
+    type: LoadBalancer
+  env:
+    REACT_APP_ROOT_SERVER: "http://{{ .Release.Name }}-backend-service:80"
+  imagePullSecret: ghcr-secret
+
+efs:
+  storage: "5Gi"  
+  storageClassName: "efs-sc"  
+  fileSystemId: "teachua-efs "
+
+#ingress:
+#  enabled: true
+#  host: 74.248.85.102.nip.io
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+resources: {}
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+volumes: []
+volumeMounts: []
+nodeSelector: {}
+tolerations: []
+affinity: {}
