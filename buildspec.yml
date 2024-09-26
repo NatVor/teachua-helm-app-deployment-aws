@@ -43,16 +43,17 @@ phases:
   build: # Deploy app via Helm
     commands:
       - echo "Deploying Helm chart"
-      - helm upgrade -i "$EKS_CODEBUILD_APP_NAME-$ENV" helm_charts/$EKS_CODEBUILD_APP_NAME -f helm_charts/$EKS_CODEBUILD_APP_NAME/values."$ENV".yaml --set image.repository="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME" --set image.tag="$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - helm upgrade -i "$EKS_CODEBUILD_APP_NAME-$ENV" helm_charts/$EKS_CODEBUILD_APP_NAME -f helm_charts/$EKS_CODEBUILD_APP_NAME/values.yaml --set image.repository="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME" --set image.tag="$CODEBUILD_RESOLVED_SOURCE_VERSION" --debug
 
   post_build: # Display the endpoint of the application
     commands:
       - bash -c "if [ \"$CODEBUILD_BUILD_SUCCEEDING\" == \"0\" ]; then exit 1; fi"
       - echo "Waiting for LoadBalancer to be ready..."
       - |
-        until kubectl get svc "$EKS_CODEBUILD_APP_NAME-$ENV" -o jsonpath="{.status.loadBalancer.ingress[*].hostname}" | grep -v "pending"; do
+        until kubectl get svc "$EKS_CODEBUILD_APP_NAME" -o jsonpath="{.status.loadBalancer.ingress[*].hostname}" | grep -v "pending"; do
           echo "LoadBalancer is not ready yet, waiting 10 seconds..."
           sleep 10
         done
-      - JAVA_APP_ENDPOINT=$(kubectl get svc "$EKS_CODEBUILD_APP_NAME-$ENV" -o jsonpath="{.status.loadBalancer.ingress[*].hostname}")
+      - JAVA_APP_ENDPOINT=$(kubectl get svc "$EKS_CODEBUILD_APP_NAME" -o jsonpath="{.status.loadBalancer.ingress[*].hostname}")
       - echo -e "\nThe Java application can be accessed now via http://$JAVA_APP_ENDPOINT/hello"
+  
