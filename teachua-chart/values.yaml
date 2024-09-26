@@ -2,15 +2,12 @@
 
 rds:
   enabled: true
-  engine: "mariadb"  # або mysql
-  host: "teachua.ctegro5wnfvo.us-east-1.rds.amazonaws.com"
+  engine: "mariadb"  
+  host: host: ${DB_HOST}
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
   port: 3306
-  dbName: "teachua"
-  username: ""
-  password: ""
-  # dbName: {{ .Values.rds.dbName | default (lookup "v1" "Secret" "new-hua" "teachua-db-secret").data.DB_NAME | b64dec | quote }}
-  # username: {{ .Values.rds.username | default (lookup "v1" "Secret" "new-hua" "teachua-db-secret").data.DB_USER | b64dec | quote }}
-  # password: {{ .Values.rds.password | default (lookup "v1" "Secret" "new-hua" "teachua-db-secret").data.DB_PASSWORD | b64dec | quote }}   
+  dbName: ${DB_NAME}
   multiAz: false
   publiclyAccessible: false
 
@@ -27,9 +24,9 @@ backend:
     type: LoadBalancer
   env:
     JDBC_DRIVER: "org.mariadb.jdbc.Driver"
-    DATASOURCE_URL: "jdbc:mariadb://teachua.ctegro5wnfvo.us-east-1.rds.amazonaws.com:3306/teachua?allowPublicKeyRetrieval=true"
-    DATASOURCE_USER: "{{ .Values.rds.username }}"  
-    DATASOURCE_PASSWORD: "{{ .Values.rds.password }}"
+    DATASOURCE_URL: "jdbc:mariadb://${DB_HOST}:3306/${DB_NAME}?allowPublicKeyRetrieval=true"
+    DATASOURCE_USER: "${DB_USERNAME}"  
+    DATASOURCE_PASSWORD: "${DB_USERNAME}"
   imagePullSecret: ghcr-secret
 
 frontend:
