@@ -4,7 +4,7 @@ env:
   variables:
     AWS_DEFAULT_REGION: "us-east-1"
     EKS_CLUSTER_NAME: "teachua"
-    EKS_CODEBUILD_APP_NAME: "teachua-app"
+    EKS_CODEBUILD_APP_NAME: "teachua-chart"
     IMAGE_REPO_NAME: "teachua/teachua-deployment"
     IMAGE_TAG: "latest"
 
