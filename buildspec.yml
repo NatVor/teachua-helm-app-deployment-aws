@@ -33,9 +33,10 @@ phases:
       - export DB_NAME=$(aws ssm get-parameter --name "dbTeachuaCredentials-name" --with-decryption --query "Parameter.Value" --output text)
       - echo "Database credentials retrieved."
       - aws --version
+      - aws-iam-authenticator version
       - helm version
       - mkdir -p ~/.kube/
-      - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+      - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME --debug
       - chmod 0600 ~/.kube/config
       - aws sts get-caller-identity
 
