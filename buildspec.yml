@@ -26,9 +26,16 @@ phases:
        - apt-get install -y jq
        - echo "Retrieving AWS Account ID from Secrets Manager"
        - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id MyAWSAccountID --query SecretString --output text | jq -r .AWS_ACCOUNT_ID)
-
+       
   pre_build: # Check helm version and Add kubeconfig to access to EKS cluster and check readiness of the cluster
     commands:
+      - echo "Retrieving database credentials from Secrets Manager"
+      - SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id dbTeachuaCredentials --query SecretString --output text)
+      - export DB_HOST=$(echo $SECRET_JSON | jq -r .DB_HOST)
+      - export DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
+      - export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
+      - export DB_NAME=$(echo $SECRET_JSON | jq -r .DB_NAME)
+      - echo "Database credentials retrieved."
       - echo "Retrieving secret from Secrets Manager"
       - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id MyAWSAccountID --query SecretString --output text)
       - echo "AWS Account ID retrieved: $AWS_ACCOUNT_ID"
