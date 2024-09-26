@@ -1,0 +1,58 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+    EKS_CLUSTER_NAME: "teachua"
+    EKS_CODEBUILD_APP_NAME: "teachua-app"
+    IMAGE_REPO_NAME: "teachua/teachua-deployment"
+    IMAGE_TAG: "latest"
+    
+
+phases:
+  install: # Install AWS cli, kubectl and Helm3
+    commands:
+       - apt-get update
+       - apt-get install -y python3 python3-pip
+       - pip install awscli
+       - curl -o aws-iam-authenticator https://s3.us-east-1.amazonaws.com/amazon-eks/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+       - chmod +x ./aws-iam-authenticator
+       - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+       - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl
+       - chmod +x kubectl
+       - mv ./kubectl /usr/local/bin/kubectl
+       - curl -sSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+       - helm repo add stable https://charts.helm.sh/stable && helm repo update
+       - apt-get install -y jq
+       - echo "Retrieving AWS Account ID from Secrets Manager"
+       - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id MyAWSAccountID --query SecretString --output text | jq -r .AWS_ACCOUNT_ID)
+
+  pre_build: # Check helm version and Add kubeconfig to access to EKS cluster and check readiness of the cluster
+    commands:
+      - echo "Retrieving secret from Secrets Manager"
+      - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id MyAWSAccountID --query SecretString --output text)
+      - echo "AWS Account ID retrieved: $AWS_ACCOUNT_ID"
+      - "helm version"
+      - "mkdir ~/.kube/"
+      - "aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME --role-arn $EKS_CODEBUILD_ROLE_ARN"
+      - "chmod 0600 ~/.kube/config"
+      - "aws sts get-caller-identity"
+  
+  build: # Deploy app via Helm
+    commands:
+      - echo "Deploying Helm chart"
+      - "helm upgrade -i $EKS_CODEBUILD_APP_NAME-$ENV helm_charts/$EKS_CODEBUILD_APP_NAME -f helm_charts/$EKS_CODEBUILD_APP_NAME/values.$ENV.yaml --set image.repository=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME --set image.tag=$CODEBUILD_RESOLVED_SOURCE_VERSION"
+  
+  post_build: # Display the endpoint of the application
+    commands:
+      - bash -c "if [ /"$CODEBUILD_BUILD_SUCCEEDING/" == /"0/" ]; then exit 1; fi"
+      - echo "Waiting for LoadBalancer to be ready..."
+      - >
+        until kubectl get svc $EKS_CODEBUILD_APP_NAME-$ENV -o jsonpath="{.status.loadBalancer.ingress[*].hostname}" | grep -v "pending"; do
+          echo "LoadBalancer is not ready yet, waiting 10 seconds..."
+          sleep 10
+        done
+      - JAVA_APP_ENDPOINT=`kubectl get svc $EKS_CODEBUILD_APP_NAME-$ENV -o jsonpath="{.status.loadBalancer.ingress[*].hostname}"`
+      - echo -e "\nThe Java application can be accessed now via http://$JAVA_APP_ENDPOINT/hello"
+
+
