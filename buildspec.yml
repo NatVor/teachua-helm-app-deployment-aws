@@ -34,7 +34,7 @@ phases:
       - echo "Database credentials retrieved."
       - aws --version
       - helm version
-      - mkdir -з ~/.kube/
+      - mkdir -p ~/.kube/
       - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
       - chmod 0600 ~/.kube/config
       - aws sts get-caller-identity
