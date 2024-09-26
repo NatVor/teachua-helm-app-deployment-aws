@@ -39,6 +39,9 @@ phases:
       - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME --debug
       - chmod 0600 ~/.kube/config
       - aws sts get-caller-identity
+      - echo "Retrieving AWS Account ID"
+      - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - echo "AWS Account ID is $AWS_ACCOUNT_ID"
 
   build: # Deploy app via Helm
     commands:
