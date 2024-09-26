@@ -32,11 +32,15 @@ phases:
       - export DB_PASSWORD=$(aws ssm get-parameter --name "dbTeachuaCredentials-password" --with-decryption --query "Parameter.Value" --output text)
       - export DB_NAME=$(aws ssm get-parameter --name "dbTeachuaCredentials-name" --with-decryption --query "Parameter.Value" --output text)
       - echo "Database credentials retrieved."
-      - "helm version"
-      - "mkdir ~/.kube/"
-      - "aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME"
-      - "chmod 0600 ~/.kube/config"
-      - "aws sts get-caller-identity"
+      - echo "DB_HOST: $DB_HOST"
+      - echo "DB_USERNAME: $DB_USERNAME"
+      - echo "DB_NAME: $DB_NAME"
+      - aws --version
+      - helm version
+      - mkdir -з ~/.kube/
+      - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME
+      - chmod 0600 ~/.kube/config
+      - aws sts get-caller-identity
 
   build: # Deploy app via Helm
     commands:
