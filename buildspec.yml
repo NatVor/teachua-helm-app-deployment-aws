@@ -33,12 +33,9 @@ phases:
       - export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
       - export DB_NAME=$(echo $SECRET_JSON | jq -r .DB_NAME)
       - echo "Database credentials retrieved."
-      - echo "Retrieving secret from Secrets Manager"
-      - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id MyAWSAccountID --query SecretString --output text)
-      - echo "AWS Account ID retrieved: $AWS_ACCOUNT_ID"
       - "helm version"
       - "mkdir ~/.kube/"
-      - "aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME --role-arn $EKS_CODEBUILD_ROLE_ARN"
+      - "aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $EKS_CLUSTER_NAME"
       - "chmod 0600 ~/.kube/config"
       - "aws sts get-caller-identity"
 
