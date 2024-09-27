@@ -3,7 +3,7 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: "us-east-1"
-    EKS_CLUSTER_NAME: "teachua"
+    EKS_CLUSTER_NAME: "teachua-new"
     EKS_CODEBUILD_APP_NAME: "teachua-chart"
     IMAGE_REPO_NAME: "teachua/teachua-deployment"
     IMAGE_TAG: "latest"
